@@ -1,0 +1,45 @@
+name: rssx
+type: go
+description: RSS feed aggregator service (Go backend + TypeScript frontend)
+path: /Users/wiloon/workspace/projects/rssx
+
+tech_stack:
+  backend:
+    language: go
+    module: rssx-api
+    build_tool: go
+    task_runner: task
+  frontend:
+    language: typescript
+    module: rssx-ui
+    build_tool: pnpm
+    framework: vue/react
+
+tools:
+  backend_build: cd rssx-api && go build
+  backend_test: cd rssx-api && go test ./...
+  backend_lint: cd rssx-api && golangci-lint run
+  frontend_build: cd rssx-ui && pnpm build
+  frontend_test: cd rssx-ui && pnpm test
+  frontend_dev: cd rssx-ui && pnpm dev
+
+conventions:
+  - Go: Follow Effective Go guidelines
+  - Use structured logging
+  - Implement proper error handling
+  - Write unit tests for business logic
+  - TypeScript: Strict mode enabled
+  - Use proper type annotations
+
+coding_standards:
+  go:
+    - Use gofmt for formatting
+    - Run golangci-lint
+    - Minimum test coverage: 70%
+  typescript:
+    - Use ESLint + Prettier
+    - Follow TypeScript best practices
+    - Minimum test coverage: 70%
+
+test_framework: go-test, jest/vitest
+coverage_target: 70

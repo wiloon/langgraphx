@@ -1,0 +1,249 @@
+# Few-shot examples for enx project agents (Go API + TypeScript UI + Chrome Extension)
+
+developer:
+  implement_feature:
+    - input: "Add event queue handler in Go"
+      output: |
+        I'll implement an event queue using channels:
+        
+        ```go
+        type EventQueue struct {
+            events chan Event
+            mu     sync.RWMutex
+            closed bool
+        }
+        
+        func NewEventQueue(capacity int) *EventQueue {
+            return &EventQueue{
+                events: make(chan Event, capacity),
+            }
+        }
+        
+        func (q *EventQueue) Enqueue(ctx context.Context, event Event) error {
+            q.mu.RLock()
+            defer q.mu.RUnlock()
+            
+            if q.closed {
+                return ErrQueueClosed
+            }
+            
+            select {
+            case q.events <- event:
+                return nil
+            case <-ctx.Done():
+                return ctx.Err()
+            default:
+                return ErrQueueFull
+            }
+        }
+        
+        func (q *EventQueue) Dequeue(ctx context.Context) (Event, error) {
+            select {
+            case event := <-q.events:
+                return event, nil
+            case <-ctx.Done():
+                return Event{}, ctx.Err()
+            }
+        }
+        
+        func (q *EventQueue) Close() error {
+            q.mu.Lock()
+            defer q.mu.Unlock()
+            
+            if q.closed {
+                return ErrAlreadyClosed
+            }
+            
+            q.closed = true
+            close(q.events)
+            return nil
+        }
+        ```
+    
+    - input: "Add type-safe event handling in TypeScript"
+      output: |
+        I'll use TypeScript discriminated unions for type-safe event handling:
+        
+        ```typescript
+        type NotificationEvent = {
+          type: 'notification';
+          userId: string;
+          message: string;
+          timestamp: Date;
+        };
+        
+        type AlertEvent = {
+          type: 'alert';
+          priority: 'high' | 'normal' | 'low';
+          title: string;
+          description: string;
+        };
+        
+        type SystemEvent = {
+          type: 'system';
+          action: 'startup' | 'shutdown' | 'error';
+          metadata?: Record<string, unknown>;
+        };
+        
+        type Event = NotificationEvent | AlertEvent | SystemEvent;
+        
+        function processEvent(event: Event): void {
+          switch (event.type) {
+            case 'notification':
+              console.log(`Notification for ${event.userId}: ${event.message}`);
+              break;
+            case 'alert':
+              if (event.priority === 'high') {
+                handleUrgentAlert(event);
+              } else {
+                handleNormalAlert(event);
+              }
+              break;
+            case 'system':
+              console.log(`System ${event.action}`, event.metadata);
+              break;
+          }
+        }
+        ```
+
+  fix_bug:
+    - input: "Fix memory leak in event processor"
+      output: |
+        The memory leak is caused by unbounded channel accumulation in the event queue.
+        
+        Solution: Add buffer size limit and event expiration:
+        
+        ```go
+        type EventQueue struct {
+            events chan Event
+            mu     sync.RWMutex
+            closed bool
+            maxAge time.Duration
+        }
+        
+        func NewEventQueue(capacity int, maxAge time.Duration) *EventQueue {
+            eq := &EventQueue{
+                events: make(chan Event, capacity),
+                maxAge: maxAge,
+            }
+            go eq.cleanupExpired()
+            return eq
+        }
+        
+        func (q *EventQueue) cleanupExpired() {
+            ticker := time.NewTicker(5 * time.Minute)
+            defer ticker.Stop()
+            
+            for range ticker.C {
+                q.mu.Lock()
+                // Drain expired events
+                for {
+                    select {
+                    case event := <-q.events:
+                        if time.Since(event.CreatedAt) > q.maxAge {
+                            // Discard expired event
+                            continue
+                        }
+                        // Put back non-expired
+                        select {
+                        case q.events <- event:
+                        default:
+                        }
+                    default:
+                        goto done
+                    }
+                }
+            done:
+                q.mu.Unlock()
+            }
+        }
+            }
+        }
+        ```
+
+reviewer:
+  code_review:
+    - input: "Review EventQueue implementation"
+      output: |
+        Code Review for event_queue.go:
+        
+        ✅ Strengths:
+        - Proper use of channels and goroutines
+        - Good context cancellation support
+        - Thread-safe with RWMutex
+        
+        ⚠️ Issues:
+        1. No handling for GenServer crashes (no supervision)
+        2. Unbounded queue could cause memory issues
+        3. Blocking calls could timeout under load
+        
+        📝 Recommendations:
+        - Add to supervision tree with restart strategy
+        - Implement max queue size with backpressure
+        - Consider using cast for enqueue (non-blocking)
+        - Add telemetry for queue size monitoring
+        
+        Overall: Solid implementation, needs production safeguards.
+
+tester:
+  test_design:
+    - input: "Design tests for EventQueue"
+      output: |
+        Test Plan for EventQueue in Go:
+        
+        ```go
+        func TestEventQueue(t *testing.T) {
+            t.Run("enqueue and dequeue", func(t *testing.T) {
+                eq := NewEventQueue(10, time.Hour)
+                ctx := context.Background()
+                
+                event := Event{ID: "1", Type: "test", CreatedAt: time.Now()}
+                err := eq.Enqueue(ctx, event)
+                require.NoError(t, err)
+                
+                got, err := eq.Dequeue(ctx)
+                require.NoError(t, err)
+                assert.Equal(t, event.ID, got.ID)
+            })
+            
+            t.Run("queue full", func(t *testing.T) {
+                eq := NewEventQueue(1, time.Hour)
+                ctx := context.Background()
+                
+                event := Event{ID: "1", Type: "test", CreatedAt: time.Now()}
+                err := eq.Enqueue(ctx, event)
+                require.NoError(t, err)
+                
+                err = eq.Enqueue(ctx, event)
+                assert.ErrorIs(t, err, ErrQueueFull)
+            })
+            
+            t.Run("context cancellation", func(t *testing.T) {
+                eq := NewEventQueue(10, time.Hour)
+                ctx, cancel := context.WithCancel(context.Background())
+                cancel()
+                
+                event := Event{ID: "1", Type: "test", CreatedAt: time.Now()}
+                err := eq.Enqueue(ctx, event)
+                assert.ErrorIs(t, err, context.Canceled)
+            })
+            
+            t.Run("concurrent access", func(t *testing.T) {
+                eq := NewEventQueue(100, time.Hour)
+                ctx := context.Background()
+                
+                var wg sync.WaitGroup
+                for i := 0; i < 50; i++ {
+                    wg.Add(1)
+                    go func(id int) {
+                        defer wg.Done()
+                        event := Event{ID: fmt.Sprintf("%d", id), CreatedAt: time.Now()}
+                        eq.Enqueue(ctx, event)
+                    }(i)
+                }
+                wg.Wait()
+            })
+        }
+        ```
+        
+        Coverage: Basic operations, edge cases, context cancellation, concurrency.

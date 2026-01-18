@@ -1,0 +1,187 @@
+# Few-shot examples for rssx project agents (Go backend + TypeScript frontend)
+
+developer:
+  implement_feature:
+    - input: "Add error handling for HTTP timeouts"
+      output: |
+        I'll implement timeout handling for HTTP requests in the Go backend:
+        
+        ```go
+        func (c *FeedClient) FetchFeed(ctx context.Context, url string) (*Feed, error) {
+            ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+            defer cancel()
+            
+            req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+            if err != nil {
+                return nil, fmt.Errorf("create request: %w", err)
+            }
+            
+            resp, err := c.httpClient.Do(req)
+            if err != nil {
+                if ctx.Err() == context.DeadlineExceeded {
+                    return nil, ErrTimeout
+                }
+                return nil, fmt.Errorf("fetch feed: %w", err)
+            }
+            defer resp.Body.Close()
+            
+            // Parse response...
+        }
+        ```
+        
+        This adds a 30-second timeout using context and properly handles timeout errors.
+    
+    - input: "Implement feed list component in TypeScript"
+      output: |
+        I'll create a feed list component with proper typing:
+        
+        ```typescript
+        interface Feed {
+          id: string;
+          title: string;
+          url: string;
+          lastUpdated: Date;
+        }
+        
+        export const FeedList: React.FC = () => {
+          const [feeds, setFeeds] = useState<Feed[]>([]);
+          const [loading, setLoading] = useState(true);
+          const [error, setError] = useState<string | null>(null);
+          
+          useEffect(() => {
+            const loadFeeds = async () => {
+              try {
+                const response = await fetch('/api/feeds');
+                if (!response.ok) throw new Error('Failed to fetch');
+                const data = await response.json();
+                setFeeds(data);
+              } catch (err) {
+                setError(err.message);
+              } finally {
+                setLoading(false);
+              }
+            };
+            
+            loadFeeds();
+          }, []);
+          
+          if (loading) return <div>Loading...</div>;
+          if (error) return <div>Error: {error}</div>;
+          
+          return (
+            <ul>
+              {feeds.map(feed => (
+                <li key={feed.id}>
+                  <a href={feed.url}>{feed.title}</a>
+                </li>
+              ))}
+            </ul>
+          );
+        };
+        ```
+
+  fix_bug:
+    - input: "Fix race condition in feed cache"
+      output: |
+        The race condition occurs in concurrent access to the cache map.
+        
+        Solution: Use sync.RWMutex for thread-safe access:
+        
+        ```go
+        type FeedCache struct {
+            mu    sync.RWMutex
+            cache map[string]*Feed
+        }
+        
+        func (c *FeedCache) Get(url string) (*Feed, bool) {
+            c.mu.RLock()
+            defer c.mu.RUnlock()
+            
+            feed, ok := c.cache[url]
+            return feed, ok
+        }
+        
+        func (c *FeedCache) Set(url string, feed *Feed) {
+            c.mu.Lock()
+            defer c.mu.Unlock()
+            
+            c.cache[url] = feed
+        }
+        ```
+
+reviewer:
+  code_review:
+    - input: "Review feed fetcher implementation"
+      output: |
+        Code Review for feed_fetcher.go:
+        
+        ✅ Strengths:
+        - Good use of context for timeout
+        - Proper error wrapping with fmt.Errorf
+        
+        ⚠️ Issues:
+        1. Missing HTTP client timeout configuration (relies only on context)
+        2. No retry logic for transient failures
+        3. Error messages could include the feed URL for debugging
+        
+        📝 Recommendations:
+        - Configure http.Client with reasonable timeout (e.g., 10s)
+        - Implement exponential backoff for retries (3 attempts)
+        - Add structured logging with slog
+        - Include URL in error messages: fmt.Errorf("fetch %s: %w", url, err)
+        
+        Overall: Good foundation, needs production hardening.
+
+tester:
+  test_design:
+    - input: "Design tests for feed parser"
+      output: |
+        Test Plan for Go feed parser:
+        
+        ```go
+        func TestParseFeed(t *testing.T) {
+            tests := []struct {
+                name    string
+                input   string
+                want    *Feed
+                wantErr bool
+            }{
+                {
+                    name:  "valid RSS 2.0",
+                    input: `<?xml version="1.0"?>
+                            <rss version="2.0">
+                                <channel><title>Test</title></channel>
+                            </rss>`,
+                    want: &Feed{Title: "Test"},
+                },
+                {
+                    name:    "invalid XML",
+                    input:   "<invalid>",
+                    wantErr: true,
+                },
+                {
+                    name:    "empty content",
+                    input:   "",
+                    wantErr: true,
+                },
+            }
+            
+            for _, tt := range tests {
+                t.Run(tt.name, func(t *testing.T) {
+                    got, err := ParseFeed(tt.input)
+                    if (err != nil) != tt.wantErr {
+                        t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
+                        return
+                    }
+                    if got != nil && tt.want != nil {
+                        if got.Title != tt.want.Title {
+                            t.Errorf("got %v, want %v", got, tt.want)
+                        }
+                    }
+                })
+            }
+        }
+        ```
+        
+        Coverage: Valid RSS/Atom formats, malformed XML, edge cases.
+

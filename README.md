@@ -1,12 +1,172 @@
 # LangGraphX
 
-Multi-Agent 协同软件开发系统
+Multi-agent collaborative development system built with LangGraph 0.3.3+.
 
-## 概述
+## Overview
 
-LangGraphX 是一个基于 LangGraph 的智能多 agent 协同系统，让多个 AI agents 协作完成软件开发任务。系统支持多项目管理，能够智能地在不同项目之间切换和协作。
+LangGraphX enables multiple AI agents to cooperatively develop software projects. It uses generic role-based agents (architect, developer, reviewer, tester) that adapt to different projects (rssx, enx) through context injection.
 
-### 核心特性
+## Features
+
+- 🤖 **Multi-Agent Collaboration**: Supervisor orchestrates specialized agents for different development tasks
+- 📁 **Multi-Project Support**: Manage multiple projects with single agent system
+- 🔧 **Generic Agents**: Agents adapt to any project via configuration and context
+- 💾 **PostgreSQL State Persistence**: Workflow state persists across sessions
+- 🛠️ **Project-Scoped Tools**: File operations, git commands, code search
+- 📝 **Few-Shot Learning**: Agents learn from project-specific examples
+
+## Architecture
+
+```
+User Input → Supervisor → [Architect | Developer | Reviewer | Tester] → Result
+                ↑                              ↓
+                └──────────── Feedback ────────┘
+```
+
+**Key Technologies:**
+- LangGraph 0.3.3+ for workflow orchestration
+- vscode-lm-proxy for LLM access via GitHub Copilot
+- Claude Sonnet 4.5 as the primary LLM
+- Python 3.11+ with strict type safety
+- PostgreSQL for state persistence
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.11+
+- PostgreSQL database
+- vscode-lm-proxy running on port 4000
+- Git
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/langgraphx.git
+cd langgraphx
+```
+
+2. Install uv (Python package manager):
+```bash
+# Install via Homebrew (macOS/Linux)
+brew install uv
+
+# Verify installation
+uv --version
+```
+
+3. Set up environment:
+```bash
+4. Configure environment:
+```bash
+# Copy example env file
+cp .env.example .env
+
+# Edit .env with your database credentials
+# DATABASE_URL is already configured for the provided database
+```
+
+5p .env.example .env
+
+# Edit .env with your database credentials
+# DATABASE_URL is already configured for the provided database
+```
+
+4. Run the system:
+```bash
+python src/main.py
+```
+
+### Usage
+
+```bash
+# List available projects
+💬 You: projects
+
+# Switch to a project
+💬 You: use rssx
+
+# Give a task to the agents
+💬 You: Add error handling for HTTP timeouts in feed fetcher
+
+# The supervisor will route to the appropriate agent
+# and you'll see the workflow progress
+```
+
+## Project Structure
+
+```
+langgraphx/
+├── src/
+│   ├── agents/          # Agent implementations (supervisor, developer, etc.)
+│   ├── graph/           # LangGraph workflow and state management
+│   ├── tools/           # Tools for file/git operations
+│   ├── llm/             # LLM client (vscode-lm-proxy integration)
+│   ├── config/          # Project registry and configuration
+│   └── main.py          # CLI entry point
+├── projects/            # Project configurations
+│   ├── rssx/            # Rust RSS project config + examples
+│   └── enx/             # Elixir event notification project config + examples
+├── tests/               # Test suite
+├── docs/                # Architecture documentation
+├── .ai/                 # AI agent guidelines
+└── pyproject.toml       # Project dependencies
+```
+
+## Configuration
+
+Each project has a `config.yaml` and `examples.yaml`:
+
+```yaml
+# projects/rssx/config.yaml
+name: rssx
+type: rust
+path: /path/to/rssx
+tech_stack:
+  language: rust
+  build_tool: cargo
+tools:
+  build: cargo build
+  test: cargo test
+conventions:
+  - Use async/await for I/O
+```
+
+## Development
+
+### Running Tests
+
+```bash
+pytest tests/ -v
+```
+
+### Type Checking
+
+```bash
+mypy src/
+```
+
+### Linting
+
+```bash
+ruff check src/
+black src/
+```
+
+## Documentation
+
+- [Architecture Documentation](docs/architecture.md) - Complete system architecture
+- [ADR Documentation](docs/adr/) - Architecture Decision Records
+- [AI Guidelines](.ai/) - Guidelines for AI agents working on this project
+
+## Contributing
+
+See [.ai/instructions.md](.ai/instructions.md) for coding standards and guidelines.
+
+## License
+
+MIT License - see LICENSE file for details
 
 - 🤖 **多 Agent 协作** - 架构师、开发者、审查者、测试员等角色协同工作
 - 🎯 **多项目支持** - 通过上下文切换管理多个项目（rssx、enx 等）

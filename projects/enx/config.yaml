@@ -1,0 +1,59 @@
+name: enx
+type: go
+description: Event notification exchange service (Go API + TypeScript UI + Chrome Extension)
+path: /Users/wiloon/workspace/projects/enx
+
+tech_stack:
+  backend:
+    language: go
+    module: enx-api
+    build_tool: go
+    task_runner: task
+  frontend:
+    language: typescript
+    module: enx-ui
+    build_tool: pnpm
+    framework: react/vue
+  mock_api:
+    language: typescript
+    module: mock-api
+    build_tool: pnpm
+  chrome_extension:
+    language: typescript
+    module: enx-chrome
+    build_tool: pnpm
+
+tools:
+  backend_build: cd enx-api && go build
+  backend_test: cd enx-api && go test ./...
+  backend_lint: golangci-lint run
+  backend_dev: cd enx-api && air
+  frontend_build: cd enx-ui && pnpm build
+  frontend_test: cd enx-ui && pnpm test
+  frontend_dev: cd enx-ui && pnpm dev
+  mock_build: cd mock-api && pnpm build
+  mock_dev: cd mock-api && pnpm dev
+  chrome_build: cd enx-chrome && pnpm build
+  chrome_dev: cd enx-chrome && pnpm dev
+
+conventions:
+  - Go: Follow Effective Go guidelines
+  - Use structured logging (slog)
+  - Implement proper error handling
+  - Write unit tests for business logic
+  - TypeScript: Strict mode enabled
+  - Use proper type annotations
+  - Chrome extension: Follow Manifest V3 best practices
+
+coding_standards:
+  go:
+    - Use gofmt for formatting
+    - Run golangci-lint
+    - Minimum test coverage: 70%
+  typescript:
+    - Use ESLint + Prettier
+    - Follow TypeScript best practices
+    - Minimum test coverage: 70%
+
+test_framework: go-test, jest/vitest
+coverage_target: 70
