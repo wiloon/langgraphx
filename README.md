@@ -27,14 +27,15 @@ User Input → Supervisor → [Architect | Developer | Reviewer | Tester] → Re
 - LangGraph 0.3.3+ for workflow orchestration
 - vscode-lm-proxy for LLM access via GitHub Copilot
 - Claude Sonnet 4.5 as the primary LLM
-- Python 3.11+ with strict type safety
+- Python 3.14+ with strict type safety
 - PostgreSQL for state persistence
+- uv for fast dependency management
 
 ## Quick Start
 
 ### Prerequisites
 
-- Python 3.11+
+- Python 3.14+ (managed via uv)
 - PostgreSQL database
 - vscode-lm-proxy running on port 4000
 - Git
@@ -47,7 +48,66 @@ git clone https://github.com/yourusername/langgraphx.git
 cd langgraphx
 ```
 
-2. Install uv (Python package manager):
+2. Install uv (if not already installed):
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# or on macOS: brew install uv
+```
+
+3. Set up the environment:
+```bash
+# uv will use Python 3.14 as specified in .python-version
+uv venv
+source .venv/bin/activate
+uv pip install -e ".[dev]"
+```
+
+4. Verify installation:
+```bash
+python scripts/verify_setup.py
+```
+
+### Usage
+
+```bash
+# Activate environment
+source .venv/bin/activate
+
+# Run the system
+python -m src.main
+
+# Or use uv directly (no activation needed)
+uv run python -m src.main
+```
+
+### Multi-Root Workspace (Recommended)
+
+For managing multiple projects simultaneously (langgraphx + rssx + deployment configs):
+
+```bash
+# Open the multi-root workspace
+code langgraphx-development.code-workspace
+```
+
+This gives you:
+- 🤖 langgraphx (AI system)
+- 📰 rssx (target project)  
+- 🏠 w10n-config (deployment configs)
+
+All in one window with:
+- Built-in tasks for building/testing
+- Debug configurations
+- Cross-project search
+- Independent git repositories
+
+See [docs/multi-root-workspace.md](docs/multi-root-workspace.md) for details.
+
+### Documentation
+
+- [docs/uv-guide.md](docs/uv-guide.md) - uv usage guide
+- [docs/multi-root-workspace.md](docs/multi-root-workspace.md) - Multi-root workspace setup
+- [docs/architecture.md](docs/architecture.md) - System architecture
+- [docs/MIGRATION-UV.md](docs/MIGRATION-UV.md) - uv migration record
 ```bash
 # Install via Homebrew (macOS/Linux)
 brew install uv

@@ -1,0 +1,251 @@
+{
+  "folders": [
+    {
+      "name": "🤖 langgraphx (AI System)",
+      "path": "."
+    },
+    {
+      "name": "📰 rssx (RSS Project)",
+      "path": "../rssx"
+    },
+    {
+      "name": "🏠 w10n-config (Homelab)",
+      "path": "../w10n-config"
+    }
+  ],
+  "settings": {
+    // Python settings
+    "python.defaultInterpreterPath": "${workspaceFolder:🤖 langgraphx (AI System)}/.venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+    
+    // File exclusions for cleaner view
+    "files.exclude": {
+      "**/__pycache__": true,
+      "**/*.pyc": true,
+      "**/.pytest_cache": true,
+      "**/.mypy_cache": true,
+      "**/.ruff_cache": true,
+      "**/node_modules": true,
+      "**/.DS_Store": true
+    },
+    
+    // Search exclusions
+    "search.exclude": {
+      "**/__pycache__": true,
+      "**/*.pyc": true,
+      "**/node_modules": true,
+      "**/.venv": true,
+      "**/target": true,
+      "**/_build": true,
+      "**/deps": true
+    },
+    
+    // Editor settings
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    },
+    
+    // Python formatting
+    "[python]": {
+      "editor.defaultFormatter": "ms-python.black-formatter",
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+      }
+    },
+    
+    // Go settings (for rssx-api)
+    "[go]": {
+      "editor.formatOnSave": true,
+      "editor.defaultFormatter": "golang.go"
+    },
+    
+    // TypeScript settings (for rssx-ui)
+    "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true
+    },
+    "[typescriptreact]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true
+    },
+    
+    // Terminal settings
+    "terminal.integrated.defaultProfile.osx": "zsh",
+    "terminal.integrated.env.osx": {
+      "PYTHONPATH": "${workspaceFolder:🤖 langgraphx (AI System)}"
+    },
+    
+    // Git settings
+    "git.enableSmartCommit": true,
+    "git.confirmSync": false,
+    "git.autofetch": true,
+    
+    // File associations
+    "files.associations": {
+      "*.yaml": "yaml",
+      "*.yml": "yaml",
+      "Dockerfile*": "dockerfile",
+      "*.md": "markdown"
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      // Python
+      "ms-python.python",
+      "ms-python.vscode-pylance",
+      "ms-python.black-formatter",
+      "charliermarsh.ruff",
+      
+      // Go (for rssx)
+      "golang.go",
+      
+      // TypeScript/JavaScript (for rssx-ui)
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+      
+      // Docker & Kubernetes
+      "ms-azuretools.vscode-docker",
+      "ms-kubernetes-tools.vscode-kubernetes-tools",
+      
+      // YAML
+      "redhat.vscode-yaml",
+      
+      // Git
+      "eamodio.gitlens",
+      
+      // Markdown
+      "yzhang.markdown-all-in-one",
+      
+      // General
+      "editorconfig.editorconfig"
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "🤖 Run LangGraphX",
+        "type": "debugpy",
+        "request": "launch",
+        "module": "src.main",
+        "console": "integratedTerminal",
+        "cwd": "${workspaceFolder:🤖 langgraphx (AI System)}",
+        "env": {
+          "PYTHONPATH": "${workspaceFolder:🤖 langgraphx (AI System)}"
+        }
+      },
+      {
+        "name": "🧪 Run Tests",
+        "type": "debugpy",
+        "request": "launch",
+        "module": "pytest",
+        "args": [
+          "tests/",
+          "-v"
+        ],
+        "console": "integratedTerminal",
+        "cwd": "${workspaceFolder:🤖 langgraphx (AI System)}"
+      },
+      {
+        "name": "✅ Verify Setup",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${workspaceFolder:🤖 langgraphx (AI System)}/scripts/verify_setup.py",
+        "console": "integratedTerminal",
+        "cwd": "${workspaceFolder:🤖 langgraphx (AI System)}"
+      }
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "🤖 Run LangGraphX",
+        "type": "shell",
+        "command": "uv run python -m src.main",
+        "problemMatcher": [],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        },
+        "options": {
+          "cwd": "${workspaceFolder:🤖 langgraphx (AI System)}"
+        }
+      },
+      {
+        "label": "🧪 Run Tests",
+        "type": "shell",
+        "command": "uv run pytest tests/ -v",
+        "problemMatcher": [],
+        "group": "test",
+        "options": {
+          "cwd": "${workspaceFolder:🤖 langgraphx (AI System)}"
+        }
+      },
+      {
+        "label": "✅ Verify Setup",
+        "type": "shell",
+        "command": "uv run python scripts/verify_setup.py",
+        "problemMatcher": [],
+        "options": {
+          "cwd": "${workspaceFolder:🤖 langgraphx (AI System)}"
+        }
+      },
+      {
+        "label": "🔧 Install Dependencies",
+        "type": "shell",
+        "command": "uv pip install -e '.[dev]'",
+        "problemMatcher": [],
+        "options": {
+          "cwd": "${workspaceFolder:🤖 langgraphx (AI System)}"
+        }
+      },
+      {
+        "label": "🏗️ Build rssx-api",
+        "type": "shell",
+        "command": "cd api && go build",
+        "problemMatcher": ["$go"],
+        "options": {
+          "cwd": "${workspaceFolder:📰 rssx (RSS Project)}"
+        }
+      },
+      {
+        "label": "🧪 Test rssx-api",
+        "type": "shell",
+        "command": "cd api && go test ./...",
+        "problemMatcher": ["$go"],
+        "group": "test",
+        "options": {
+          "cwd": "${workspaceFolder:📰 rssx (RSS Project)}"
+        }
+      },
+      {
+        "label": "🎨 Build rssx-ui",
+        "type": "shell",
+        "command": "cd ui && pnpm build",
+        "problemMatcher": [],
+        "options": {
+          "cwd": "${workspaceFolder:📰 rssx (RSS Project)}"
+        }
+      },
+      {
+        "label": "🚀 Dev rssx-ui",
+        "type": "shell",
+        "command": "cd ui && pnpm dev",
+        "problemMatcher": [],
+        "isBackground": true,
+        "options": {
+          "cwd": "${workspaceFolder:📰 rssx (RSS Project)}"
+        }
+      }
+    ]
+  }
+}

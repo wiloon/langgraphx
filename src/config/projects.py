@@ -56,6 +56,17 @@ class ProjectRegistry:
             if field not in config:
                 raise ValueError(f"Project {name} missing required field: {field}")
 
+        # Validate project path exists
+        project_path = Path(config["path"])
+        if not project_path.exists():
+            raise ValueError(
+                f"Project path does not exist: {config['path']}\n"
+                f"Please ensure the project is cloned or update the path in {config_file}"
+            )
+
+        # Resolve symlinks to get real path
+        config["path"] = str(project_path.resolve())
+
         self._projects[name] = ProjectInfo(**config)
 
         # Load examples if available

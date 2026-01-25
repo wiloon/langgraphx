@@ -3,7 +3,7 @@ name = "langgraphx"
 version = "0.1.0"
 description = "Multi-agent collaborative development system built with LangGraph"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 license = { text = "MIT" }
 authors = [
     { name = "wiloon" }
