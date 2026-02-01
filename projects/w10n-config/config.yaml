@@ -1,0 +1,74 @@
+name: w10n-config
+type: yaml
+description: Homelab infrastructure configuration (K8s, Ansible, Xray, networking)
+path: /Users/wiloon/workspace/projects/w10n-config
+
+tech_stack:
+  infrastructure:
+    tools:
+      - kubernetes
+      - ansible
+      - task
+      - kubectl
+      - nerdctl
+  configuration:
+    types:
+      - yaml
+      - toml
+      - shell
+      - python
+  homelab:
+    k8s_cluster:
+      vip: 192.168.50.100
+      version: v1.34.1
+      nodes: 7
+      ingress: kong
+      storage: longhorn
+      cert_manager: ca-issuer
+
+tools:
+  k8s_apply: kubectl apply -f
+  k8s_get: kubectl get
+  k8s_describe: kubectl describe
+  ansible_run: ansible-playbook -i ansible/inventory.ini
+  task_list: task --list
+  xray_upgrade: cd xray && task upgrade
+
+conventions:
+  - Use kubectl for K8s operations
+  - Use Ansible for system configuration
+  - Use task for workflow automation
+  - Follow homelab naming conventions
+  - Use wiloon.com domain for services
+  - Store certificates as K8s secrets
+
+directory_structure:
+  homelab:
+    k8s: Kubernetes manifests organized by service
+    k8s-nodes: Node-level configurations
+    workstation: Ansible playbooks for workstation setup
+  ansible: Ansible playbooks and inventory
+  xray: Xray proxy configuration and management
+  ssh: SSH configuration
+  bin: Utility scripts
+
+coding_standards:
+  yaml:
+    - Use 2-space indentation
+    - Follow Kubernetes manifest conventions
+    - Use meaningful resource names
+  ansible:
+    - Use YAML syntax
+    - Follow role-based structure
+    - Use variables for reusability
+  shell:
+    - Use shellcheck for validation
+    - Add error handling
+    - Document complex scripts
+
+deployment_patterns:
+  - Use Kustomize or raw YAML for K8s
+  - Use Kong Ingress for external access
+  - Use cert-manager for TLS certificates
+  - Use Longhorn for persistent storage
+  - Use wildcard certificate *.wiloon.com when possible

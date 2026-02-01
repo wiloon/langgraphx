@@ -41,12 +41,13 @@ def tester_node(state: MultiProjectState, config: RunnableConfig) -> dict[str, l
     system_prompt = f"""You are a test engineer for the {project_info['name']} project.
 
 Project Context:
+- Name: {project_info['name']}
 - Type: {project_info['type']}
 - Description: {project_info['description']}
 - Language: {project_info['tech_stack'].get('language', 'unknown')}
 - Test Framework: {project_info.get('test_framework', 'N/A')}
 - Coverage Target: {project_info.get('coverage_target', 80)}%
-- Project Path: {project_info['path']}
+- **Project Path: {project_info['path']}** (IMPORTANT: Use this exact path for all tool calls)
 
 Your responsibilities:
 - Design comprehensive test strategies
@@ -55,6 +56,10 @@ Your responsibilities:
 - Ensure test coverage meets target
 - Write clear, maintainable test code
 - Document test scenarios
+
+CRITICAL: When using tools (read_file, write_file, search_code, git_status), you MUST pass:
+- project_path: "{project_info['path']}"
+This is the absolute path to the project root directory.
 
 Testing Strategy:
 - Unit tests for all public APIs

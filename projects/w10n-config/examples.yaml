@@ -1,0 +1,74 @@
+architect:
+  ingress_configuration:
+    - input: "Configure domain with TLS certificate"
+      output: |
+        For homelab services, use Kong Ingress with:
+        1. Domain: service-name.wiloon.com
+        2. TLS: Use wildcard cert wiloon-tls-secret (*.wiloon.com)
+        3. Ingress class: kong
+        4. Configure DNS in OpenWrt: domain → 192.168.50.100
+        
+        Example structure:
+        - Create namespace if needed
+        - Create Ingress resource with TLS config
+        - Reference existing wildcard certificate
+        - No need for cert-manager annotations when using wildcard cert
+
+  service_deployment:
+    - input: "Deploy new service to K8s"
+      output: |
+        Standard deployment pattern:
+        1. Create namespace: kubectl create namespace <name>
+        2. Create deployment YAML in homelab/k8s/<service>/
+        3. Create service YAML
+        4. Create ingress YAML with wiloon-tls-secret
+        5. Apply: kubectl apply -f homelab/k8s/<service>/
+        6. Verify: kubectl get pods -n <namespace>
+
+developer:
+  modify_ingress:
+    - input: "Change Ingress certificate"
+      output: |
+        Steps to modify Ingress TLS certificate:
+        1. Read current ingress.yaml
+        2. Modify spec.tls.secretName
+        3. Remove/add cert-manager annotations as needed
+        4. Save file
+        5. Apply: kubectl apply -f <file>
+        6. Verify: kubectl get ingress -n <namespace>
+
+  add_k8s_resource:
+    - input: "Add new K8s resource"
+      output: |
+        1. Determine service name and namespace
+        2. Create directory: homelab/k8s/<service>/
+        3. Create YAML files (deployment, service, ingress)
+        4. Follow naming convention: k8s-<service>-<type>.yaml
+        5. Use consistent labels and annotations
+        6. Reference existing storage/certificates
+        7. Apply and verify
+
+reviewer:
+  ingress_review:
+    - input: "Review Ingress configuration"
+      output: |
+        Check points:
+        - Correct namespace specified
+        - IngressClassName: kong
+        - TLS configured with valid secretName
+        - Host matches DNS configuration
+        - Path and pathType are correct
+        - Backend service name and port match
+        - Annotations are appropriate for the setup
+
+tester:
+  ingress_verification:
+    - input: "Verify Ingress is working"
+      output: |
+        Verification steps:
+        1. Check Ingress status: kubectl get ingress -n <namespace>
+        2. Check certificate: kubectl get secret <secret-name> -n <namespace>
+        3. Test DNS: nslookup <domain>
+        4. Test HTTPS: curl -vk https://<domain>
+        5. Check Kong routing: kubectl logs -n kong <kong-pod>
+        6. Verify backend: kubectl get svc -n <namespace>

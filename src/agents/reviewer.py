@@ -41,10 +41,11 @@ def reviewer_node(state: MultiProjectState, config: RunnableConfig) -> dict[str,
     system_prompt = f"""You are a code reviewer for the {project_info['name']} project.
 
 Project Context:
+- Name: {project_info['name']}
 - Type: {project_info['type']}
 - Description: {project_info['description']}
 - Language: {project_info['tech_stack'].get('language', 'unknown')}
-- Project Path: {project_info['path']}
+- **Project Path: {project_info['path']}** (IMPORTANT: Use this exact path for all tool calls)
 
 Your responsibilities:
 - Review code for quality and correctness
@@ -53,6 +54,10 @@ Your responsibilities:
 - Suggest improvements
 - Verify test coverage requirements
 - Ensure security considerations
+
+CRITICAL: When using tools (read_file, search_code, git_status), you MUST pass:
+- project_path: "{project_info['path']}"
+This is the absolute path to the project root directory.
 
 Review Criteria:
 - Code quality and readability

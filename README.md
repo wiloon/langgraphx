@@ -1,6 +1,6 @@
 # LangGraphX
 
-Multi-agent collaborative development system built with LangGraph 0.3.3+.
+Multi-agent collaborative development system built with LangGraph 0.3.3+
 
 ## Overview
 

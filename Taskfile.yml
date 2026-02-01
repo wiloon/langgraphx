@@ -1,0 +1,102 @@
+version: '3'
+
+tasks:
+  # 开发和运行
+  run:
+    desc: "运行 LangGraphX 交互模式"
+    cmds:
+      - uv run python -m src.main
+
+  verify:
+    desc: "验证系统设置"
+    cmds:
+      - uv run python scripts/verify_setup.py
+
+  test:
+    desc: "运行所有测试"
+    cmds:
+      - uv run pytest tests/ -v
+
+  # 快捷测试任务（开发用）
+  test:check-ingress:
+    desc: "测试：查看 w10n-config 的 rssx Ingress 配置"
+    cmds:
+      - uv run python -m src.main -p w10n-config "查看 rssx 的 Ingress 配置"
+
+  test:modify-ingress:
+    desc: "测试：修改 rssx Ingress 证书为通配符证书"
+    cmds:
+      - uv run python -m src.main -p w10n-config "修改 rssx 的 Ingress 配置，将证书从 rssx-tls-secret 改为使用通配符证书 wiloon-tls-secret"
+
+  test:list-projects:
+    desc: "测试：列出所有项目"
+    cmds:
+      - uv run python -m src.main --list-projects
+
+  test:rssx-check:
+    desc: "测试：检查 rssx 项目配置"
+    cmds:
+      - uv run python -m src.main -p rssx "列出项目中的所有配置文件"
+
+  test:enx-check:
+    desc: "测试：检查 enx 项目配置"
+    cmds:
+      - uv run python -m src.main -p enx "显示项目结构"
+
+  # 自定义快速测试（可以传递参数）
+  quick:
+    desc: "快速测试任务（用法：task quick -- '你的任务描述'）"
+    cmds:
+      - uv run python -m src.main {{.CLI_ARGS}}
+
+  quick:rssx:
+    desc: "在 rssx 项目上快速测试（用法：task quick:rssx -- '任务'）"
+    cmds:
+      - uv run python -m src.main -p rssx {{.CLI_ARGS}}
+
+  quick:w10n:
+    desc: "在 w10n-config 项目上快速测试（用法：task quick:w10n -- '任务'）"
+    cmds:
+      - uv run python -m src.main -p w10n-config {{.CLI_ARGS}}
+
+  quick:enx:
+    desc: "在 enx 项目上快速测试（用法：task quick:enx -- '任务'）"
+    cmds:
+      - uv run python -m src.main -p enx {{.CLI_ARGS}}
+
+  # 代码质量
+  lint:
+    desc: "运行代码检查"
+    cmds:
+      - uv run ruff check src/
+      - uv run mypy src/
+
+  # 依赖管理
+  install:
+    desc: "安装依赖"
+    cmds:
+      - uv pip install -e '.[dev]'
+
+  sync:
+    desc: "同步依赖"
+    cmds:
+      - uv pip sync
+
+  # 清理
+  clean:
+    desc: "清理临时文件"
+    cmds:
+      - find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+      - find . -type f -name "*.pyc" -delete
+      - find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+
+  # 帮助
+  help:
+    desc: "显示所有可用任务"
+    cmds:
+      - task --list
+
+  default:
+    desc: "默认任务：显示帮助"
+    cmds:
+      - task help

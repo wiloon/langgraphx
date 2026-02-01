@@ -15,6 +15,9 @@ from src.llm.proxy_client import LLMClient
 from src.tools.file_tools import get_file_tools
 from src.tools.git_tools import get_git_tools
 
+# Maximum iterations to prevent infinite loops
+MAX_ITERATIONS = 15
+
 
 def route_to_agent(
     state: MultiProjectState,
@@ -23,6 +26,12 @@ def route_to_agent(
 
     Args:
         state: Current workflow state
+
+    # Check iteration count to prevent infinite loops
+    messages = state.get("messages", [])
+    if len(messages) > MAX_ITERATIONS:
+        print(f"\n⚠️  Maximum iterations ({MAX_ITERATIONS}) reached. Stopping workflow.\n")
+        return "__end__"
 
     Returns:
         Name of next agent or END
@@ -66,12 +75,18 @@ def build_graph(llm_client: LLMClient) -> CompiledGraph:
     # Add routing edges from supervisor
     workflow.add_conditional_edges("supervisor", route_to_agent)
 
-    # Add edges back to supervisor from agents (for multi-step workflows)
-    # For now, agents go directly to END after completing their task
-    workflow.add_edge("architect", END)
-    workflow.add_edge("developer", END)
-    workflow.add_edge("reviewer", END)
-    workflow.add_edge("tester", END)
+    # Add edges back to supervisor from agents for multi-step workflows
+    # Architect investigates -> routes back to supervisor for next action
+    workflow.add_edge("architect", "supervisor")
+
+    # Developer implements -> can go to reviewer or end
+    workflow.add_edge("developer", "supervisor")
+
+    # Reviewer reviews -> can request changes or approve (end)
+    workflow.add_edge("reviewer", "supervisor")
+
+    # Tester tests -> can report issues or pass (end)
+    workflow.add_edge("tester", "supervisor")
 
     # Create checkpointer for state persistence
     checkpointer = create_checkpointer()

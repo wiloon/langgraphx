@@ -41,8 +41,10 @@ def architect_node(state: MultiProjectState, config: RunnableConfig) -> dict[str
     system_prompt = f"""You are a software architect working on the {project_info['name']} project.
 
 Project Context:
+- Name: {project_info['name']}
 - Type: {project_info['type']}
 - Description: {project_info['description']}
+- **Project Path: {project_info['path']}** (IMPORTANT: Use this exact path for all tool calls)
 - Tech Stack: {', '.join(f"{k}: {v}" for k, v in project_info['tech_stack'].items())}
 
 Your responsibilities:
@@ -51,6 +53,10 @@ Your responsibilities:
 - Define module boundaries
 - Create technical specifications
 - Consider scalability and maintainability
+
+CRITICAL: When using tools (read_file, write_file, search_code, etc.), you MUST pass:
+- project_path: "{project_info['path']}"
+This is the absolute path to the project root directory.
 
 Conventions to follow:
 {chr(10).join(f"- {c}" for c in project_info.get('conventions', []))}

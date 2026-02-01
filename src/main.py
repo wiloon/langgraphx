@@ -1,5 +1,6 @@
 """CLI entry point for LangGraphX."""
 
+import argparse
 import sys
 from typing import Any
 
@@ -10,8 +11,95 @@ from src.graph.builder import create_graph, get_all_tools
 from src.llm.proxy_client import create_llm_client
 
 
+def run_task(
+    task: str,
+    project: str | None = None,
+    registry=None,
+    graph=None,
+    llm_client=None,
+    tools=None,
+) -> None:
+    """Execute a single task.
+
+    Args:
+        task: Task description
+        project: Project name (optional, uses first project if not specified)
+        registry: Project registry instance
+        graph: Compiled graph instance
+        llm_client: LLM client instance
+        tools: Available tools list
+    """
+    # Use provided project or default to first available
+    projects = registry.list_names()
+    current_project = project if project and project in projects else projects[0]
+
+    print(f"\n🔄 Processing task with {current_project}...\n")
+
+    # Load project context
+    context = registry.load_context(current_project)
+
+    # Prepare state
+    initial_state: dict[str, Any] = {
+        "messages": [HumanMessage(content=task)],
+        "current_project": current_project,
+        "projects": {p: registry.get(p) for p in projects},
+        "project_context": context,
+        "next_agent": "",
+        "task": task,
+    }
+
+    # Configure graph
+    config = {
+        "configurable": {
+            "llm": llm_client.get_chat_model(),
+            "tools": tools,
+            "thread_id": f"{current_project}_session",
+        }
+    }
+
+    # Execute workflow
+    for event in graph.stream(initial_state, config):
+        for node_name, node_output in event.items():
+            print(f"📍 {node_name.upper()}")
+
+            if "messages" in node_output:
+                messages = node_output["messages"]
+                if messages:
+                    last_message = messages[-1]
+                    print(f"💬 {last_message.content}\n")
+
+            if "next_agent" in node_output and node_output["next_agent"]:
+                print(f"➡️  Routing to: {node_output['next_agent']}\n")
+
+    print("✅ Task completed!\n")
+
+
 def main() -> None:
     """Main CLI entry point."""
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description="LangGraphX - Multi-Agent Development System",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "task",
+        nargs="?",
+        help="Task to execute (if not provided, enters interactive mode)",
+    )
+    parser.add_argument(
+        "-p",
+        "--project",
+        help="Project to use (default: first available project)",
+    )
+    parser.add_argument(
+        "-l",
+        "--list-projects",
+        action="store_true",
+        help="List available projects and exit",
+    )
+
+    args = parser.parse_args()
+
     print("🤖 LangGraphX - Multi-Agent Development System")
     print("=" * 60)
 
@@ -41,6 +129,33 @@ def main() -> None:
 
         print("\n✅ System ready!\n")
 
+        # Handle --list-projects flag
+        if args.list_projects:
+            print("📂 Available projects:")
+            for project in projects:
+                info = registry.get(project)
+                print(f"  - {project} ({info['type']}): {info['description']}")
+            return
+
+        # Handle direct task execution
+        if args.task:
+            try:
+                run_task(
+                    task=args.task,
+                    project=args.project,
+                    registry=registry,
+                    graph=graph,
+                    llm_client=llm_client,
+                    tools=tools,
+                )
+            except Exception as e:
+                print(f"\n❌ Error: {e}\n")
+                import traceback
+
+                traceback.print_exc()
+                sys.exit(1)
+            return
+
         # Interactive loop
         print("Available commands:")
         print("  - Type your task to execute")
@@ -48,7 +163,11 @@ def main() -> None:
         print("  - 'quit' or 'exit' to exit")
         print()
 
-        current_project = projects[0] if projects else None
+        current_project = (
+            args.project
+            if args.project and args.project in projects
+            else (projects[0] if projects else None)
+        )
         if current_project:
             print(f"📁 Active project: {current_project}\n")
 
@@ -86,45 +205,21 @@ def main() -> None:
                     print("❌ No project selected. Use 'use <project_name>' to select a project.")
                     continue
 
-                # Load project context
-                context = registry.load_context(current_project)
+                # Execute task using shared function
+                try:
+                    run_task(
+                        task=user_input,
+                        project=current_project,
+                        registry=registry,
+                        graph=graph,
+                        llm_client=llm_client,
+                        tools=tools,
+                    )
+                except Exception as e:
+                    print(f"\n❌ Error: {e}\n")
+                    import traceback
 
-                # Prepare state
-                initial_state: dict[str, Any] = {
-                    "messages": [HumanMessage(content=user_input)],
-                    "current_project": current_project,
-                    "projects": {p: registry.get(p) for p in projects},
-                    "project_context": context,
-                    "next_agent": "",
-                    "task": user_input,
-                }
-
-                # Configure graph
-                config = {
-                    "configurable": {
-                        "llm": llm_client.get_chat_model(),
-                        "tools": tools,
-                        "thread_id": f"{current_project}_session",
-                    }
-                }
-
-                # Execute workflow
-                print(f"\n🔄 Processing task with {current_project}...\n")
-
-                for event in graph.stream(initial_state, config):
-                    for node_name, node_output in event.items():
-                        print(f"📍 {node_name.upper()}")
-
-                        if "messages" in node_output:
-                            messages = node_output["messages"]
-                            if messages:
-                                last_message = messages[-1]
-                                print(f"💬 {last_message.content}\n")
-
-                        if "next_agent" in node_output and node_output["next_agent"]:
-                            print(f"➡️  Routing to: {node_output['next_agent']}\n")
-
-                print("✅ Task completed!\n")
+                    traceback.print_exc()
 
             except KeyboardInterrupt:
                 print("\n\n⚠️  Interrupted. Type 'quit' to exit.\n")

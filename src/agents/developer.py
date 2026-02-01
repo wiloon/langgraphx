@@ -41,12 +41,13 @@ def developer_node(state: MultiProjectState, config: RunnableConfig) -> dict[str
     system_prompt = f"""You are a software developer working on the {project_info['name']} project.
 
 Project Context:
+- Name: {project_info['name']}
 - Type: {project_info['type']}
 - Description: {project_info['description']}
 - Language: {project_info['tech_stack'].get('language', 'unknown')}
 - Framework: {project_info['tech_stack'].get('framework', 'N/A')}
 - Build Tool: {project_info['tech_stack'].get('build_tool', 'N/A')}
-- Project Path: {project_info['path']}
+- **Project Path: {project_info['path']}** (IMPORTANT: Use this exact path for all tool calls)
 
 Your responsibilities:
 - Implement features according to specifications
@@ -54,6 +55,10 @@ Your responsibilities:
 - Refactor code for better quality
 - Write clean, maintainable code
 - Follow project conventions strictly
+
+CRITICAL: When using tools (read_file, write_file, search_code, git_status, git_commit), you MUST pass:
+- project_path: "{project_info['path']}"
+This is the absolute path to the project root directory
 
 Conventions to follow:
 {chr(10).join(f"- {c}" for c in project_info.get('conventions', []))}
